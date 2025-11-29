@@ -25,6 +25,8 @@
 
   <ItemGroup>
     <ProjectReference Include="..\HostelService.Application\HostelService.Application.csproj" />
+    <ProjectReference Include="..\HostelService.Domain\HostelService.Domain.csproj" />
+    <ProjectReference Include="..\HostelService.Infrastructure\HostelService.Infrastructure.csproj" />
   </ItemGroup>
 
 </Project>

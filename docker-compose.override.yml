@@ -2,24 +2,25 @@
 
 services:
 
-  # ==============================
-  # 📚 Book Catalog Service (local build)
-  # ==============================
+  # ========================================
+  # 📚 Book Catalog Service (LOCAL BUILD)
+  # ========================================
   bookcatalog-api:
     build:
-      context: ..
-      dockerfile: src/BookCatalogService/BookCatalogService.API/Dockerfile
+      context: .
+      dockerfile: BookCatalogService.API/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: "Development"
       ConnectionStrings__DefaultConnection: "Server=bookcatalog-db;Database=BookCatalogDb;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True;"
 
-  # ==============================
-  # 🏨 Hostel Management Service (local build)
-  # ==============================
+
+  # ========================================
+  # 🏨 Hostel Management Service (LOCAL BUILD)
+  # ========================================
   hostel-api:
     build:
-      context: ..
-      dockerfile: src/HostelService/HostelService.API/Dockerfile
+      context: .
+      dockerfile: HostelService.API/Dockerfile
     environment:
       ASPNETCORE_ENVIRONMENT: "Development"
       ConnectionStrings__DefaultConnection: "Server=hostel-db;Database=HostelManagement;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True;"

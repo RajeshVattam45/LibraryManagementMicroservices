@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
 using HostelService.Infrastructure.Data;
 using HostelService.Application.Services;
@@ -18,12 +18,16 @@ builder.Configuration
 // --------------------
 // Database Connection
 // --------------------
+// --------------------
+// Database Connection
+// --------------------
 var connectionString = builder.Configuration.GetConnectionString ( "DefaultConnection" );
 
 builder.Services.AddDbContext<HostelDbContext> ( options =>
     options.UseSqlServer ( connectionString,
         b => b.MigrationsAssembly ( "HostelService.Infrastructure" ) )
 );
+
 
 // --------------------
 // Dependency Injection
