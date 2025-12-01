@@ -7,17 +7,15 @@ using System.Threading.Tasks;
 
 namespace BookCatalogService.Domain.Interfaces
 {
-    public interface IBookRepository
+    public interface IAuthorRepository
     {
-        Task<IEnumerable<Book>> GetAllAsync ( );
-        Task<Book?> GetByIdAsync ( int id );
-        Task AddAsync ( Book book );
-        Task UpdateAsync ( Book book );
+        Task<IEnumerable<Author>> GetAllAsync ( );
+        Task<Author?> GetByIdAsync ( int id );
+        Task AddAsync ( Author author );
+        Task UpdateAsync ( Author author );
         Task DeleteAsync ( int id );
-
-        // Advanced queries
-        Task<IEnumerable<Book>> SearchAsync ( string keyword );
         Task<bool> ExistsAsync ( int id );
+        Task<IEnumerable<Author>> SearchAsync ( string keyword );
         Task SaveChangesAsync ( );
     }
 }

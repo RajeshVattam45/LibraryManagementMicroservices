@@ -6,17 +6,18 @@ using System.Threading.Tasks;
 
 namespace BookCatalogService.Application.DTOs
 {
-    public class CreateBookDto
+    public class BookResponseDto
     {
+        public int Id { get; set; }
         public string ISBN { get; set; } = string.Empty;
         public string ISBN13 { get; set; } = string.Empty;
         public string Title { get; set; } = string.Empty;
         public string Subtitle { get; set; } = string.Empty;
         public string Description { get; set; } = string.Empty;
 
-        public int AuthorId { get; set; }
-        public int CategoryId { get; set; }
-        public int PublisherId { get; set; }
+        public string AuthorName { get; set; } = string.Empty;
+        public string CategoryName { get; set; } = string.Empty;
+        public string PublisherName { get; set; } = string.Empty;
 
         public int PublishedYear { get; set; }
         public string Edition { get; set; } = string.Empty;
@@ -25,6 +26,7 @@ namespace BookCatalogService.Application.DTOs
         public decimal Price { get; set; }
 
         public int TotalCopies { get; set; }
+        public int AvailableCopies { get; set; }
         public string ShelfLocation { get; set; } = string.Empty;
 
         public string Tags { get; set; } = string.Empty;
