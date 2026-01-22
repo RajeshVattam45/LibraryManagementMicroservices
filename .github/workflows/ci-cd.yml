@@ -1,11 +1,19 @@
-name: CI - Build & Push Images to Azure ACR
+name: CI/CD - Build, Migrate & Deploy APIs
 
 on:
   push:
     branches: [ "master" ]
 
+env:
+  ACR_LOGIN_SERVER: libraryacr.azurecr.io
+  IMAGE_TAG: latest
+
 jobs:
-  build_and_push:
+
+  # ===========================
+  # 1️⃣ Build + Migrations
+  # ===========================
+  build_and_migrate:
     runs-on: ubuntu-latest
 
     steps:
@@ -17,38 +25,67 @@ jobs:
       with:
         dotnet-version: '8.0.x'
 
-    - name: Restore dependencies
-      run: dotnet restore
-
-    - name: Build solution
-      run: dotnet build --configuration Release --no-restore
+    - name: Restore & Build
+      run: |
+        dotnet restore
+        dotnet build --configuration Release
 
     # ---------------------------
-    # Login to Azure Container Registry
+    # Run EF Migrations (BookCatalog)
     # ---------------------------
-    - name: Login to ACR
+    - name: Run BookCatalog migrations
+      run: |
+        dotnet ef database update \
+          --project BookCatalogService.Infrastructure \
+          --startup-project BookCatalogService.API
+      env:
+        ConnectionStrings__DefaultConnection: ${{ secrets.BOOKCATALOG_DB }}
+
+    # ---------------------------
+    # Run EF Migrations (Hostel)
+    # ---------------------------
+    - name: Run Hostel migrations
+      run: |
+        dotnet ef database update \
+          --project HostelService.Infrastructure \
+          --startup-project HostelService.API
+      env:
+        ConnectionStrings__DefaultConnection: ${{ secrets.HOSTEL_DB }}
+
+  # ===========================
+  # 2️⃣ Build & Push Images
+  # ===========================
+  build_and_push_images:
+    needs: build_and_migrate
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Login to Azure Container Registry
       uses: docker/login-action@v3
       with:
-        registry: ${{ secrets.ACR_LOGIN_SERVER }}
+        registry: ${{ env.ACR_LOGIN_SERVER }}
         username: ${{ secrets.ACR_USERNAME }}
         password: ${{ secrets.ACR_PASSWORD }}
 
     # ---------------------------
-    # Build & Push BookCatalog API
+    # BookCatalog Image
     # ---------------------------
-    - name: Build & Push BookCatalog Image
+    - name: Build & Push BookCatalog API
       run: |
         docker build \
-          -t ${{ secrets.ACR_LOGIN_SERVER }}/bookcatalogservice:latest \
+          -t ${{ env.ACR_LOGIN_SERVER }}/bookcatalogservice:${{ env.IMAGE_TAG }} \
           -f BookCatalogService.API/Dockerfile .
-        docker push ${{ secrets.ACR_LOGIN_SERVER }}/bookcatalogservice:latest
+        docker push ${{ env.ACR_LOGIN_SERVER }}/bookcatalogservice:${{ env.IMAGE_TAG }}
 
     # ---------------------------
-    # Build & Push Hostel API
+    # Hostel Image
     # ---------------------------
-    - name: Build & Push Hostel Image
+    - name: Build & Push Hostel API
       run: |
         docker build \
-          -t ${{ secrets.ACR_LOGIN_SERVER }}/hostelservice:latest \
+          -t ${{ env.ACR_LOGIN_SERVER }}/hostelservice:${{ env.IMAGE_TAG }} \
           -f HostelService.API/Dockerfile .
-        docker push ${{ secrets.ACR_LOGIN_SERVER }}/hostelservice:latest
+        docker push ${{ env.ACR_LOGIN_SERVER }}/hostelservice:${{ env.IMAGE_TAG }}
