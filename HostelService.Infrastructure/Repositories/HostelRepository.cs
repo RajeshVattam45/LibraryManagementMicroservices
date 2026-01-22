@@ -75,5 +75,41 @@ namespace HostelService.Infrastructure.Repositories
             _db.Hostels.Update ( hostel );
             await _db.SaveChangesAsync ();
         }
+
+        public async Task<bool> RoomExistsInHostelAsync ( int hostelId, string roomNumber )
+        {
+            return await _db.Rooms
+                .AnyAsync ( r => r.HostelId == hostelId && r.RoomNumber == roomNumber );
+        }
+
+        public async Task<bool> IsContactNumberUsedAsync ( string contactNumber, int? excludeHostelId = null )
+        {
+            if (string.IsNullOrWhiteSpace ( contactNumber ))
+                return false;
+
+            // Normalize: trim and remove extra whitespace. You may also normalize formatting (e.g. remove +91, dashes) if you accept those.
+            var normalized = contactNumber.Trim ();
+
+            // Query any hostels that have this contact number but optionally exclude a specific hostel (useful during update)
+            return await _db.Hostels
+                .AsNoTracking ()
+                .AnyAsync ( h => h.ContactNumber == normalized && (excludeHostelId == null || h.Id != excludeHostelId.Value) );
+        }
+
+        public async Task<Hostel?> GetByNameAsync ( string hostelName )
+        {
+            if (string.IsNullOrWhiteSpace ( hostelName ))
+                return null;
+
+            var normalized = hostelName.Trim ();
+
+            // Case-insensitive comparison: convert both sides to lower-case.
+            // NOTE: This will be translated to SQL LOWER(...) so it is server-side.
+            var nameLower = normalized.ToLower ();
+
+            return await _db.Hostels
+                .AsNoTracking ()
+                .FirstOrDefaultAsync ( h => EF.Functions.Like ( h.HostelName.ToLower (), nameLower ) );
+        }
     }
 }

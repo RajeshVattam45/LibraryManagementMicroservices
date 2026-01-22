@@ -11,10 +11,20 @@ namespace BookCatalogService.Application.Services
     public class BookAppService : IBookAppService
     {
         private readonly IBookRepository _bookRepository;
+        private readonly IAuthorRepository _authorRepository;
+        private readonly ICategoryRepository _categoryRepository;
+        private readonly IPublisherRepository _publisherRepository;
 
-        public BookAppService ( IBookRepository bookRepository )
+        public BookAppService (
+            IBookRepository bookRepository,
+            IAuthorRepository authorRepository,
+            ICategoryRepository categoryRepository,
+            IPublisherRepository publisherRepository )
         {
             _bookRepository = bookRepository;
+            _authorRepository = authorRepository;
+            _categoryRepository = categoryRepository;
+            _publisherRepository = publisherRepository;
         }
 
         public async Task<IEnumerable<Book>> GetAllAsync ( )
@@ -29,10 +39,52 @@ namespace BookCatalogService.Application.Services
 
         public async Task<Book> CreateAsync ( Book book )
         {
-            // Business rule: default available copies = total copies
-            if (book.AvailableCopies == 0)
-                book.AvailableCopies = book.TotalCopies;
+            // 1. Validate ISBN formats
+            if (string.IsNullOrWhiteSpace ( book.ISBN ) || book.ISBN.Length != 10)
+                throw new Exception ( "ISBN must be exactly 10 characters." );
 
+            if (string.IsNullOrWhiteSpace ( book.ISBN13 ) || book.ISBN13.Length != 13)
+                throw new Exception ( "ISBN-13 must be exactly 13 digits." );
+
+            if (!book.ISBN13.StartsWith ( "978" ) && !book.ISBN13.StartsWith ( "979" ))
+                throw new Exception ( "ISBN-13 must start with 978 or 979." );
+
+            // 2. Prevent duplicate books
+            if (await _bookRepository.ExistsByISBNAsync ( book.ISBN13 ))
+                throw new Exception ( $"Book with ISBN-13 {book.ISBN13} already exists." );
+
+            // 3. Validate foreign keys
+            if (!await _authorRepository.ExistsAsync ( book.AuthorId ))
+                throw new Exception ( "Author does not exist." );
+
+            if (!await _categoryRepository.ExistsAsync ( book.CategoryId ))
+                throw new Exception ( "Category does not exist." );
+
+            if (!await _publisherRepository.ExistsAsync ( book.PublisherId ))
+                throw new Exception ( "Publisher does not exist." );
+
+            // 4. Year validation
+            if (book.PublishedYear < 1450 || book.PublishedYear > DateTime.Now.Year)
+                throw new Exception ( "Invalid published year." );
+
+            // 5. Price validation
+            if (book.Price <= 0)
+                throw new Exception ( "Price must be greater than zero." );
+
+            // 6. Auto-assign available copies on creation
+            book.AvailableCopies = book.TotalCopies;
+
+            // 7. Normalize tags
+            if (!string.IsNullOrWhiteSpace ( book.Tags ))
+            {
+                book.Tags = string.Join ( ",",
+                    book.Tags.Split ( ',' )
+                             .Select ( t => t.Trim ().ToLower () )
+                             .Where ( t => !string.IsNullOrWhiteSpace ( t ) )
+                             .Distinct () );
+            }
+
+            // 8. Save to repo
             await _bookRepository.AddAsync ( book );
             await _bookRepository.SaveChangesAsync ();
 
@@ -45,7 +97,25 @@ namespace BookCatalogService.Application.Services
             if (existing == null)
                 return null;
 
-            // Update fields (auto-mapper can do this too)
+            // Validate foreign keys
+            if (!await _authorRepository.ExistsAsync ( updatedBook.AuthorId ))
+                throw new Exception ( "Author does not exist." );
+
+            if (!await _categoryRepository.ExistsAsync ( updatedBook.CategoryId ))
+                throw new Exception ( "Category does not exist." );
+
+            if (!await _publisherRepository.ExistsAsync ( updatedBook.PublisherId ))
+                throw new Exception ( "Publisher does not exist." );
+
+            // Validate price
+            if (updatedBook.Price <= 0)
+                throw new Exception ( "Price must be greater than zero." );
+
+            // Validate year
+            if (updatedBook.PublishedYear < 1450 || updatedBook.PublishedYear > DateTime.Now.Year)
+                throw new Exception ( "Invalid published year." );
+
+            // Update book data
             existing.Title = updatedBook.Title;
             existing.Subtitle = updatedBook.Subtitle;
             existing.Description = updatedBook.Description;
@@ -55,7 +125,11 @@ namespace BookCatalogService.Application.Services
             existing.Edition = updatedBook.Edition;
             existing.Price = updatedBook.Price;
             existing.TotalCopies = updatedBook.TotalCopies;
-            existing.AvailableCopies = updatedBook.AvailableCopies;
+
+            // AvailableCopies should not automatically update on update
+            if (updatedBook.AvailableCopies >= 0)
+                existing.AvailableCopies = updatedBook.AvailableCopies;
+
             existing.Tags = updatedBook.Tags;
             existing.Format = updatedBook.Format;
             existing.Language = updatedBook.Language;

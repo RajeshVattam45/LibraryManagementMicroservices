@@ -10,28 +10,16 @@ using System.Threading.Tasks;
 
 namespace HostelService.Infrastructure.Repositories
 {
-    public class RoomRepository : IRoomRepository
+    public class RoomRepository : GenericRepository<Room>, IRoomRepository
     {
         private readonly HostelDbContext _db;
-        public RoomRepository ( HostelDbContext db ) => _db = db;
 
-        public async Task<Room> AddAsync ( Room room )
+        public RoomRepository ( HostelDbContext db ) : base ( db )
         {
-            await _db.Rooms.AddAsync ( room );
-            await _db.SaveChangesAsync ();
-            return room;
+            _db = db;
         }
 
-        public async Task DeleteAsync ( int id )
-        {
-            var r = await _db.Rooms.FindAsync ( id );
-            if (r == null) return;
-            r.IsActive = false;
-            r.UpdatedAt = DateTime.UtcNow;
-            _db.Rooms.Update ( r );
-            await _db.SaveChangesAsync ();
-        }
-
+        // Only custom method (not part of generic repo)
         public async Task<IEnumerable<Room>> GetAllByHostelAsync ( int hostelId )
         {
             return await _db.Rooms
@@ -41,15 +29,21 @@ namespace HostelService.Infrastructure.Repositories
                             .ToListAsync ();
         }
 
-        public async Task<Room?> GetByIdAsync ( int id )
+        public override async Task<Room?> GetByIdAsync ( int id )
         {
             return await _db.Rooms.AsNoTracking ().FirstOrDefaultAsync ( r => r.Id == id );
         }
 
-        public async Task UpdateAsync ( Room room )
+        // Override DeleteAsync because you want SOFT DELETE
+        public override async Task DeleteAsync ( int id )
         {
-            room.UpdatedAt = DateTime.UtcNow;
-            _db.Rooms.Update ( room );
+            var r = await _db.Rooms.FindAsync ( id );
+            if (r == null) return;
+
+            r.IsActive = false;
+            r.UpdatedAt = DateTime.UtcNow;
+
+            _db.Rooms.Update ( r );
             await _db.SaveChangesAsync ();
         }
     }

@@ -70,6 +70,11 @@ namespace BookCatalogService.Infrastructure.Repositories
                 .ToListAsync ();
         }
 
+        public async Task<bool> ExistsByNameAsync ( string name )
+        {
+            return await _context.Authors.AnyAsync ( a => a.Name.ToLower () == name.ToLower () );
+        }
+
         public async Task SaveChangesAsync ( )
         {
             await _context.SaveChangesAsync ();

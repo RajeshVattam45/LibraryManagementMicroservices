@@ -1,6 +1,6 @@
 ﻿services:
   # =======================
-  # 📚 BookCatalog Service
+  # BookCatalog Service
   # =======================
   bookcatalog-api:
     image: vattamrajesh/bookcatalogservice:latest
@@ -27,43 +27,41 @@
       - library-network
 
   # =======================
-  # 🏨 Hostel Management Service
+  # Hostel Management Service
   # =======================
   hostel-api:
     image: vattamrajesh/hostelmanagement:latest
     ports:
-      - "8085:8080"
+      - "8087:8080"
     environment:
       ASPNETCORE_ENVIRONMENT: "Development"
       ConnectionStrings__DefaultConnection: ${HOSTEL_DB_CONNECTION}
     depends_on:
-      - hostel-db
+      - hostel-db-library
     networks:
-      - hostel-network
+      - library-network
 
-  hostel-db:
+  hostel-db-library:
     image: mcr.microsoft.com/mssql/server:2022-latest
     environment:
       SA_PASSWORD: ${HOSTEL_DB_PASSWORD}
       ACCEPT_EULA: "Y"
     ports:
-      - "1433:1433"
+      - "1440:1433"
     volumes:
-      - hostel_db_data:/var/opt/mssql
+      - hostel_db_data_library:/var/opt/mssql
     networks:
-      - hostel-network
-
+      - library-network
 
 # =======================
-# 🔗 Networks
+# Networks
 # =======================
 networks:
   library-network:
-  hostel-network:
 
 # =======================
-# 💾 Volumes
+# Volumes
 # =======================
 volumes:
-  hostel_db_data:
+  hostel_db_data_library:
   bookcatalog_db_data:

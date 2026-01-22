@@ -4,6 +4,8 @@ using HostelService.Infrastructure.Data;
 using HostelService.Application.Services;
 using HostelService.Domain.Interfaces;
 using HostelService.Infrastructure.Repositories;
+using HostelService.Application.Adapter;
+using HostelService.Application.Mediators;
 
 var builder = WebApplication.CreateBuilder ( args );
 
@@ -18,14 +20,16 @@ builder.Configuration
 // --------------------
 // Database Connection
 // --------------------
-// --------------------
-// Database Connection
-// --------------------
 var connectionString = builder.Configuration.GetConnectionString ( "DefaultConnection" );
 
 builder.Services.AddDbContext<HostelDbContext> ( options =>
-    options.UseSqlServer ( connectionString,
-        b => b.MigrationsAssembly ( "HostelService.Infrastructure" ) )
+    options.UseSqlServer (
+        connectionString,
+        sql =>
+        {
+            sql.MigrationsAssembly ( "HostelService.Infrastructure" );
+            sql.EnableRetryOnFailure ();
+        } )
 );
 
 
@@ -40,6 +44,18 @@ builder.Services.AddScoped<IRoomRepository, RoomRepository> ();
 
 builder.Services.AddScoped<IHostelStudentRepository, HostelStudentRepository> ();
 builder.Services.AddScoped<IHostelStudentAppService, HostelStudentAppService> ();
+
+builder.Services.AddScoped<IHostelAdapter, HostelAdapter> ();
+builder.Services.AddScoped<IStudentAssignmentMediator, StudentAssignmentMediator> ();
+
+builder.Services.AddScoped ( typeof ( IGenericRepository<> ), typeof ( GenericRepository<> ) );
+
+//builder.Services.AddHttpClient<IStudentValidationService, StudentValidationService> ();
+builder.Services.AddHttpClient<IStudentValidationService, StudentValidationService> ( client =>
+{
+    client.BaseAddress = new Uri ( "https://host.docker.internal:7230/" );
+} );
+
 
 // --------------------
 // MVC + Swagger
@@ -66,4 +82,35 @@ if (app.Environment.IsDevelopment ())
 
 app.UseHttpsRedirection ();
 app.MapControllers ();
+
+var applyMigrationsEnv = builder.Configuration["APPLY_MIGRATIONS"];
+var applyMigrations = false;
+
+// If env var is explicitly set to "true", honor it.
+// Otherwise allow auto-run only in Development.
+if (!string.IsNullOrEmpty ( applyMigrationsEnv ))
+{
+    bool.TryParse ( applyMigrationsEnv, out applyMigrations );
+}
+else
+{
+    applyMigrations = app.Environment.IsDevelopment ();
+}
+
+var isEfDesignTime = AppDomain.CurrentDomain
+    .GetAssemblies ()
+    .Any ( a => a.FullName!.StartsWith ( "Microsoft.EntityFrameworkCore.Design" ) );
+
+if (applyMigrations && !isEfDesignTime)
+{
+    using var scope = app.Services.CreateScope ();
+    var services = scope.ServiceProvider;
+    var logger = services.GetRequiredService<ILogger<Program>> ();
+    var db = services.GetRequiredService<HostelDbContext> ();
+
+    db.Database.Migrate ();
+}
+
+
 app.Run ();
+public partial class Program { }

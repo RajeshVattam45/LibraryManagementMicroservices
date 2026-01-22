@@ -78,6 +78,11 @@ namespace BookCatalogService.Infrastructure.Repositories
             return await _context.Books.AnyAsync ( x => x.Id == id );
         }
 
+        public async Task<bool> ExistsByISBNAsync ( string isbn13 )
+        {
+            return await _context.Books.AnyAsync ( b => b.ISBN13 == isbn13 );
+        }
+
         public async Task SaveChangesAsync ( )
         {
             await _context.SaveChangesAsync ();

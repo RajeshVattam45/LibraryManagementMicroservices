@@ -1,35 +1,35 @@
-﻿using Microsoft.EntityFrameworkCore.Design;
-using Microsoft.EntityFrameworkCore;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
+using Microsoft.Extensions.Configuration;
 
 namespace HostelService.Infrastructure.Data
 {
-    public class HostelDbContextFactory : IDesignTimeDbContextFactory<HostelDbContext>
+    public class HostelDbContextFactory
+        : IDesignTimeDbContextFactory<HostelDbContext>
     {
         public HostelDbContext CreateDbContext ( string[] args )
         {
-            // Check if Update-Database or Add-Migration provided a connection string
-            var customArg = args.FirstOrDefault ( a => a.StartsWith ( "--connection=" ) );
-            string connectionString;
+            var basePath = Directory.GetCurrentDirectory ();
 
-            if (!string.IsNullOrWhiteSpace ( customArg ))
-            {
-                connectionString = customArg.Replace ( "--connection=", "" ).Trim ( '"' );
-            }
-            else
-            {
-                // fallback if no args given
-                connectionString = "Server=localhost,1433;Database=HostelManagement;User Id=sa;Password=YourPassword123!;TrustServerCertificate=True;";
-            }
+            var configuration = new ConfigurationBuilder ()
+                .SetBasePath ( basePath )
+                .AddJsonFile ( "appsettings.json", optional: false )
+                .AddEnvironmentVariables ()
+                .Build ();
 
-            var builder = new DbContextOptionsBuilder<HostelDbContext> ();
-            builder.UseSqlServer ( connectionString );
+            var connectionString =
+                configuration.GetConnectionString ( "DefaultConnection" );
 
-            return new HostelDbContext ( builder.Options );
+            var optionsBuilder = new DbContextOptionsBuilder<HostelDbContext> ();
+            optionsBuilder.UseSqlServer (
+                connectionString,
+                sql =>
+                {
+                    sql.MigrationsAssembly ( "HostelService.Infrastructure" );
+                    sql.EnableRetryOnFailure ();
+                } );
+
+            return new HostelDbContext ( optionsBuilder.Options );
         }
     }
 }

@@ -14,5 +14,7 @@ namespace HostelService.Domain.Interfaces
         Task<HostelStudent> AddAsync ( HostelStudent hs );
         Task UpdateAsync ( HostelStudent hs );
         Task DeleteAsync ( int id );
+        Task<bool> IsStudentAssignedAsync ( int studentId );
+
     }
 }

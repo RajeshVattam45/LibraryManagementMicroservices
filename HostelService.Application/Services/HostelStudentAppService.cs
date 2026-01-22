@@ -1,4 +1,5 @@
 ﻿using HostelService.Application.DTOs;
+using HostelService.Application.Mediators;
 using HostelService.Domain.Entites;
 using HostelService.Domain.Interfaces;
 using System;
@@ -12,14 +13,13 @@ namespace HostelService.Application.Services
     public class HostelStudentAppService : IHostelStudentAppService
     {
         private readonly IHostelStudentRepository _repo;
-        private readonly IRoomRepository _roomRepo;  // Optional if you want room validations
+        private readonly IStudentAssignmentMediator _studentAssignmentMediator;
 
         public HostelStudentAppService (
-            IHostelStudentRepository repo,
-            IRoomRepository roomRepo )
+            IHostelStudentRepository repo, IStudentAssignmentMediator studentAssignmentMediator )
         {
             _repo = repo;
-            _roomRepo = roomRepo;
+            _studentAssignmentMediator = studentAssignmentMediator;
         }
 
         public async Task<HostelStudentDto?> GetByIdAsync ( int id )
@@ -36,17 +36,7 @@ namespace HostelService.Application.Services
 
         public async Task<HostelStudentDto> AddAsync ( CreateHostelStudentDto dto )
         {
-            var hs = new HostelStudent
-            {
-                StudentId = dto.StudentId,
-                HostelId = dto.HostelId,
-                RoomId = dto.RoomId,
-                JoinDate = dto.JoinDate,
-                IsActive = true
-            };
-
-            await _repo.AddAsync ( hs );
-            return ToDto ( hs );
+            return await _studentAssignmentMediator.AssignStudentAsync ( dto );
         }
 
         public async Task UpdateAsync ( int id, UpdateHostelStudentDto dto )

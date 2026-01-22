@@ -1,5 +1,7 @@
 ﻿using HostelService.Application.DTOs;
 using HostelService.Domain.Entites;
+using HostelService.Domain.Enums;
+using HostelService.Domain.Factories;
 using HostelService.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -12,10 +14,12 @@ namespace HostelService.Application.Services
     public class RoomAppService : IRoomAppService
     {
         private readonly IRoomRepository _repo;
+        private readonly IHostelRepository _hostelRepo;
 
-        public RoomAppService ( IRoomRepository repo )
+        public RoomAppService ( IRoomRepository repo, IHostelRepository hostelRepository )
         {
             _repo = repo;
+            _hostelRepo = hostelRepository;
         }
 
         public async Task<RoomDto?> GetByIdAsync ( int id )
@@ -35,18 +39,44 @@ namespace HostelService.Application.Services
 
         public async Task<RoomDto> AddAsync ( CreateRoomDto dto )
         {
-            var room = new Room
+            var roomExist = await _hostelRepo.GetByIdAsync ( dto.HostelId );
+            if(roomExist == null)
+                throw new Exception ( "Hostel not found" );
+
+            if(dto.TotalBeds <= 0)
+                throw new Exception ( "Total beds must be greater than zero" );
+
+            if (dto.OccupiedBeds < 0 || dto.OccupiedBeds > dto.TotalBeds)
+                throw new Exception ( "Occupied beds cannot exceed total beds." );
+
+            if(dto.FeePerBed < 0)
+                throw new Exception ( "Fee per bed cannot be negative." );
+
+            if (await _hostelRepo.RoomExistsInHostelAsync ( dto.HostelId, dto.RoomNumber ))
+                throw new Exception ( "Room number already exists in this hostel." );
+
+            if (!Enum.TryParse ( dto.RoomType, true, out RoomTypeEnum roomTypeEnum ))
+                throw new Exception ( "Invalid room type" );
+
+            // Convert App DTO → Factory DTO
+            var factoryDto = new CreateRoomDtoData
             {
                 HostelId = dto.HostelId,
                 RoomNumber = dto.RoomNumber,
                 FloorNumber = dto.FloorNumber,
-                RoomType = dto.RoomType,
                 TotalBeds = dto.TotalBeds,
                 OccupiedBeds = dto.OccupiedBeds,
                 FeePerBed = dto.FeePerBed
             };
 
+            // Convert string → enum safely
+            //Enum.TryParse ( dto.RoomType, out RoomTypeEnum roomTypeEnum );
+
+            // Use Factory Method here
+            var room = RoomFactory.Create ( roomTypeEnum, factoryDto );
+
             await _repo.AddAsync ( room );
+
             return ToDto ( room );
         }
 

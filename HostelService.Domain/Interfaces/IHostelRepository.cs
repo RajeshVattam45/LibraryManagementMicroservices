@@ -18,5 +18,9 @@ namespace HostelService.Domain.Interfaces
 
         // Advanced
         Task<IEnumerable<Hostel>> GetWithRoomsAsync ( int hostelId );
+        Task<bool> RoomExistsInHostelAsync ( int hostelId, string roomNumber );
+        Task<bool> IsContactNumberUsedAsync ( string contactNumber, int? excludeHostelId = null );
+        Task<Hostel?> GetByNameAsync ( string hostelName );
+
     }
 }

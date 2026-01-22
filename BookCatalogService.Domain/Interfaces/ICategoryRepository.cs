@@ -16,6 +16,8 @@ namespace BookCatalogService.Domain.Interfaces
         Task DeleteAsync ( int id );
         Task<bool> ExistsAsync ( int id );
         Task<IEnumerable<Category>> SearchAsync ( string keyword );
+        Task<bool> ExistsByNameAsync ( string name );
+        Task<bool> ExistsByCodeAsync ( string code );
         Task SaveChangesAsync ( );
     }
 }

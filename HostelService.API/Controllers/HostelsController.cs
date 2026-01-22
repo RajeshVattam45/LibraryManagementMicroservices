@@ -41,9 +41,26 @@ namespace HostelService.API.Controllers
             if (!ModelState.IsValid)
                 return BadRequest ( ModelState );
 
-            var created = await _service.CreateAsync ( dto );
+            try
+            {
+                var created = await _service.CreateAsync ( dto );
 
-            return CreatedAtAction ( nameof ( Get ), new { id = created.Id }, created );
+                return CreatedAtAction (
+                    nameof ( Get ),
+                    new { id = created.Id },
+                    created
+                );
+            }
+            catch (ArgumentException ex)
+            {
+                // Validation errors (pincode, phone, hostel type etc.)
+                return BadRequest ( new { message = ex.Message } );
+            }
+            catch (InvalidOperationException ex)
+            {
+                // Business rule conflicts (duplicate hostel name, contact number)
+                return Conflict ( new { message = ex.Message } ); // HTTP 409
+            }
         }
 
         // PUT: api/hostels/{id}

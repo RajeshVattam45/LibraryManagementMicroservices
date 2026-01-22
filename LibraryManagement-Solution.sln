@@ -7,8 +7,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{533BC602-9DC
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "shared", "shared", "{1CD1E5F9-AD85-47E2-84BF-DC0CE58EA8F1}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "ApiGateway", "ApiGateway", "{76E01DFF-9CBB-4BD0-B75B-679763AF3A2C}"
-EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "docker", "docker", "{2C1FE6C4-255A-42C3-A119-392EF2D7CF9F}"
 	ProjectSection(SolutionItems) = preProject
 		.env = .env
@@ -41,6 +39,8 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HostelService.Infrastructure", "HostelService.Infrastructure\HostelService.Infrastructure.csproj", "{A31700E4-A490-409F-A14F-05640FEFB3E1}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HostelService.Tests", "HostelService.Tests\HostelService.Tests.csproj", "{1FF90B6E-CF48-4F4C-A7A1-832A4A290513}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HostelService.MVC", "HostelService.MVC\HostelService.MVC.csproj", "{A11BCB31-2ED8-4746-8024-1B9C6D881664}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -88,6 +88,10 @@ Global
 		{1FF90B6E-CF48-4F4C-A7A1-832A4A290513}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{1FF90B6E-CF48-4F4C-A7A1-832A4A290513}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{1FF90B6E-CF48-4F4C-A7A1-832A4A290513}.Release|Any CPU.Build.0 = Release|Any CPU
+		{A11BCB31-2ED8-4746-8024-1B9C6D881664}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{A11BCB31-2ED8-4746-8024-1B9C6D881664}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{A11BCB31-2ED8-4746-8024-1B9C6D881664}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{A11BCB31-2ED8-4746-8024-1B9C6D881664}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -105,5 +109,6 @@ Global
 		{C2FCD9D4-DEAD-4045-8ACD-55419B7EB5BE} = {C5C684CC-260D-4A55-B802-AE08AC2B27CD}
 		{A31700E4-A490-409F-A14F-05640FEFB3E1} = {C5C684CC-260D-4A55-B802-AE08AC2B27CD}
 		{1FF90B6E-CF48-4F4C-A7A1-832A4A290513} = {C5C684CC-260D-4A55-B802-AE08AC2B27CD}
+		{A11BCB31-2ED8-4746-8024-1B9C6D881664} = {C5C684CC-260D-4A55-B802-AE08AC2B27CD}
 	EndGlobalSection
 EndGlobal

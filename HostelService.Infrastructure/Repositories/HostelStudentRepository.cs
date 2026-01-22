@@ -10,17 +10,14 @@ using System.Threading.Tasks;
 
 namespace HostelService.Infrastructure.Repositories
 {
-    public class HostelStudentRepository : IHostelStudentRepository
+    public class HostelStudentRepository : GenericRepository<HostelStudent>, IHostelStudentRepository
     {
         private readonly HostelDbContext _db;
-        public HostelStudentRepository ( HostelDbContext db ) => _db = db;
-
-        public async Task<HostelStudent> AddAsync ( HostelStudent hs )
+        public HostelStudentRepository ( HostelDbContext db ) : base ( db )
         {
-            await _db.HostelStudents.AddAsync ( hs );
-            await _db.SaveChangesAsync ();
-            return hs;
+            _db = db;
         }
+
 
         public async Task DeleteAsync ( int id )
         {
@@ -31,7 +28,7 @@ namespace HostelService.Infrastructure.Repositories
             await _db.SaveChangesAsync ();
         }
 
-        public async Task<HostelStudent?> GetByIdAsync ( int id )
+        public override async Task<HostelStudent?> GetByIdAsync ( int id )
         {
             return await _db.HostelStudents
                             .AsNoTracking ()
@@ -49,11 +46,11 @@ namespace HostelService.Infrastructure.Repositories
                             .ToListAsync ();
         }
 
-        public async Task UpdateAsync ( HostelStudent hs )
+
+        public async Task<bool> IsStudentAssignedAsync ( int studentId )
         {
-            hs.IsActive = true;
-            _db.HostelStudents.Update ( hs );
-            await _db.SaveChangesAsync ();
+            return await _db.HostelStudents
+                .AnyAsync ( hs => hs.StudentId == studentId && hs.IsActive == true );
         }
     }
 }

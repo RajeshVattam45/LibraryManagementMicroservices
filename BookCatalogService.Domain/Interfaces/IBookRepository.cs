@@ -18,6 +18,10 @@ namespace BookCatalogService.Domain.Interfaces
         // Advanced queries
         Task<IEnumerable<Book>> SearchAsync ( string keyword );
         Task<bool> ExistsAsync ( int id );
+
+        // ⭐ NEW BUSINESS LOGIC SUPPORT
+        Task<bool> ExistsByISBNAsync ( string isbn13 );
+
         Task SaveChangesAsync ( );
     }
 }

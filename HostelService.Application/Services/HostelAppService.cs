@@ -1,5 +1,7 @@
-﻿using HostelService.Application.DTOs;
+﻿using HostelService.Application.Adapter;
+using HostelService.Application.DTOs;
 using HostelService.Domain.Entites;
+using HostelService.Domain.Enums;
 using HostelService.Domain.Interfaces;
 using System;
 using System.Collections.Generic;
@@ -12,46 +14,46 @@ namespace HostelService.Application.Services
     public class HostelAppService : IHostelAppService
     {
         private readonly IHostelRepository _repo;
+        private readonly IStudentValidationService _studentValidator;
+        private readonly IHostelAdapter _adapter;
 
-        public HostelAppService ( IHostelRepository repo )
+        public HostelAppService ( IHostelRepository repo, IStudentValidationService studentValidator, IHostelAdapter adapter )
         {
             _repo = repo;
+            _studentValidator = studentValidator;
+            _adapter = adapter;
         }
-
 
         public async Task<HostelDto?> GetByIdAsync ( int id )
         {
             var entity = await _repo.GetByIdAsync ( id );
-            if (entity == null) return null;
-
-            return MapToDto ( entity );
+            return entity == null ? null : _adapter.ConvertToDto ( entity );
         }
+
 
         public async Task<IEnumerable<HostelDto>> GetAllAsync ( )
         {
             var hostels = await _repo.GetAllAsync ();
-            return hostels.Select ( MapToDto );
+            return hostels.Select ( _adapter.ConvertToDto );
         }
 
         public async Task<HostelDto> CreateAsync ( CreateHostelDto dto )
         {
-            var hostel = new Hostel
-            {
-                HostelName = dto.HostelName,
-                HostelType = dto.HostelType,
-                Description = dto.Description,
-                AddressLine1 = dto.AddressLine1,
-                AddressLine2 = dto.AddressLine2,
-                City = dto.City,
-                State = dto.State,
-                Pincode = dto.Pincode,
-                TotalFloors = dto.TotalFloors,
-                WardenName = dto.WardenName,
-                ContactNumber = dto.ContactNumber,
-            };
+            await ValidateCreateHostel ( dto );
+
+            if (await _repo.GetByNameAsync ( dto.HostelName ) != null)
+                throw new InvalidOperationException ( "Hostel name already exists." );
+
+            if (await _repo.IsContactNumberUsedAsync ( dto.ContactNumber ))
+                throw new InvalidOperationException ( "Contact number already used." );
+
+            // Use Adapter instead of manually mapping
+            var hostel = _adapter.ConvertToEntity ( dto );
 
             var added = await _repo.AddAsync ( hostel );
-            return MapToDto ( added );
+
+            // Convert Entity → DTO via Adapter
+            return _adapter.ConvertToDto ( added );
         }
 
         public async Task UpdateAsync ( UpdateHostelDto dto )
@@ -59,6 +61,12 @@ namespace HostelService.Application.Services
             var entity = await _repo.GetByIdAsync ( dto.Id );
             if (entity == null)
                 throw new Exception ( "Hostel not found" );
+
+            if (dto.TotalFloors.HasValue && dto.TotalFloors <= 0)
+                throw new ArgumentException ( "Total floors must be greater than 0." );
+
+            if (dto.ContactNumber?.Length > 0 && dto.ContactNumber.Length != 10)
+                throw new ArgumentException ( "Invalid contact number." );
 
             // patch update
             entity.HostelName = dto.HostelName ?? entity.HostelName;
@@ -89,17 +97,33 @@ namespace HostelService.Application.Services
             await _repo.DeleteAsync ( id );
         }
 
-        private HostelDto MapToDto ( Hostel h )
+        // Validator method
+        private async Task ValidateCreateHostel ( CreateHostelDto dto )
         {
-            return new HostelDto
-            {
-                Id = h.Id,
-                HostelName = h.HostelName,
-                HostelType = h.HostelType,
-                City = h.City,
-                ContactNumber = h.ContactNumber,
-                IsActive = h.IsActive
-            };
+            // Business validations
+            if (string.IsNullOrWhiteSpace ( dto.HostelName ))
+                throw new ArgumentException ( "Hostel Name is required." );
+
+            if (dto.TotalFloors <= 0)
+                throw new ArgumentException ( "Total floors must be greater than 0." );
+
+            if (!Enum.TryParse<HostelTypeEnum> ( dto.HostelType, true, out var hostelType ))
+                throw new ArgumentException ( "Invalid hostel type." );
+
+            if (!dto.ContactNumber.All ( char.IsDigit ))
+                throw new ArgumentException ( "Contact number must contain only digits." );
+
+            if (dto.Pincode.Length != 6 || !dto.Pincode.All ( char.IsDigit ))
+                throw new ArgumentException ( "Invalid pincode." );
+
+            if (string.IsNullOrWhiteSpace ( dto.WardenName ) || dto.WardenName.Length < 3)
+                throw new ArgumentException ( "Warden name is invalid." );
+
+            if (dto.TotalFloors > 20)
+                throw new ArgumentException ( "Total floors seems unrealistic." );
+
+            if (dto.Description?.Length > 500)
+                throw new ArgumentException ( "Description cannot exceed 500 characters." );
         }
     }
 }

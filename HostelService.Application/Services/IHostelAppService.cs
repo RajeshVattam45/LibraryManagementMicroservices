@@ -14,5 +14,6 @@ namespace HostelService.Application.Services
         Task<HostelDto> CreateAsync ( CreateHostelDto dto );
         Task UpdateAsync ( UpdateHostelDto dto );
         Task DeleteAsync ( int id );
+
     }
 }

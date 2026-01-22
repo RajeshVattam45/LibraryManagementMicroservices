@@ -72,6 +72,19 @@ namespace BookCatalogService.Infrastructure.Repositories
                 .ToListAsync ();
         }
 
+        public async Task<bool> ExistsByNameAsync ( string name )
+        {
+            var normalized = name.Trim ().ToLower ();
+            return await _context.Categories
+                .AnyAsync ( c => c.Name.ToLower () == normalized );
+        }
+
+        public async Task<bool> ExistsByCodeAsync ( string code )
+        {
+            return await _context.Categories
+                .AnyAsync ( c => c.Code.ToLower () == code.ToLower () );
+        }
+
         public async Task SaveChangesAsync ( )
         {
             await _context.SaveChangesAsync ();
