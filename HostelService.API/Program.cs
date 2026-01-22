@@ -28,9 +28,12 @@ builder.Services.AddDbContext<HostelDbContext> ( options =>
         sql =>
         {
             sql.MigrationsAssembly ( "HostelService.Infrastructure" );
-            sql.EnableRetryOnFailure ();
-        } )
-);
+            sql.EnableRetryOnFailure (
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds ( 30 ),
+                errorNumbersToAdd: null
+            );
+        } ) );
 
 
 // --------------------

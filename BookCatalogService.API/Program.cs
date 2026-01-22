@@ -23,9 +23,14 @@ builder.Services.AddDbContext<BookCatalogDbContext> ( options =>
         builder.Configuration.GetConnectionString ( "DefaultConnection" ),
         sql =>
         {
-            sql.EnableRetryOnFailure (); // Azure SQL safe
+            sql.EnableRetryOnFailure (
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds ( 30 ),
+                errorNumbersToAdd: null
+            );
         } );
 } );
+
 
 // --------------------
 // Register Repositories & Services
