@@ -5,7 +5,7 @@ on:
     branches: [ "master" ]
 
 env:
-  ACR_LOGIN_SERVER: libraryacr.azurecr.io
+  ACR_LOGIN_SERVER: libraryacontainerregistry.azurecr.io
   IMAGE_TAG: latest
 
 jobs:
