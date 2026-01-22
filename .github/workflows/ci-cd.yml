@@ -36,28 +36,6 @@ jobs:
         dotnet restore
         dotnet build --configuration Release
 
-    # ---------------------------
-    # Run EF Migrations (BookCatalog)
-    # ---------------------------
-    - name: Run BookCatalog migrations
-      run: |
-        dotnet ef database update \
-          --project BookCatalogService.Infrastructure \
-          --startup-project BookCatalogService.API
-      env:
-        ConnectionStrings__DefaultConnection: ${{ secrets.BOOKCATALOG_DB }}
-
-    # ---------------------------
-    # Run EF Migrations (Hostel)
-    # ---------------------------
-    - name: Run Hostel migrations
-      run: |
-        dotnet ef database update \
-          --project HostelService.Infrastructure \
-          --startup-project HostelService.API
-      env:
-        ConnectionStrings__DefaultConnection: ${{ secrets.HOSTEL_DB }}
-
   # ===========================
   # 2️⃣ Build & Push Images
   # ===========================
