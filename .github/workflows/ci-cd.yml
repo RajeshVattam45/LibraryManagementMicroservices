@@ -1,21 +1,15 @@
-name: CI-CD Pipeline
+name: CI - Build & Push Images to Azure ACR
 
 on:
   push:
     branches: [ "master" ]
-  pull_request:
-    branches: [ "master" ]
 
 jobs:
-
-  # =====================================================
-  # 1️⃣ CI - Build & Push Docker Images (GitHub Runner)
-  # =====================================================
   build_and_push:
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
+    - name: Checkout code
       uses: actions/checkout@v4
 
     - name: Setup .NET 8
@@ -29,50 +23,32 @@ jobs:
     - name: Build solution
       run: dotnet build --configuration Release --no-restore
 
-    # ---- Docker Login ----
-    - name: Login to Docker Hub
+    # ---------------------------
+    # Login to Azure Container Registry
+    # ---------------------------
+    - name: Login to ACR
       uses: docker/login-action@v3
       with:
-        username: ${{ secrets.DOCKER_USERNAME }}
-        password: ${{ secrets.DOCKER_PASSWORD }}
+        registry: ${{ secrets.ACR_LOGIN_SERVER }}
+        username: ${{ secrets.ACR_USERNAME }}
+        password: ${{ secrets.ACR_PASSWORD }}
 
-    # ---- Build Images ----
-    - name: Build BookCatalogService Image
+    # ---------------------------
+    # Build & Push BookCatalog API
+    # ---------------------------
+    - name: Build & Push BookCatalog Image
       run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/bookcatalogservice:latest \
+        docker build \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/bookcatalogservice:latest \
           -f BookCatalogService.API/Dockerfile .
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/bookcatalogservice:latest
 
-    - name: Build HostelService Image
+    # ---------------------------
+    # Build & Push Hostel API
+    # ---------------------------
+    - name: Build & Push Hostel Image
       run: |
-        docker build -t ${{ secrets.DOCKER_USERNAME }}/hostelmanagement:latest \
+        docker build \
+          -t ${{ secrets.ACR_LOGIN_SERVER }}/hostelservice:latest \
           -f HostelService.API/Dockerfile .
-
-    # ---- Push Images ----
-    - name: Push Images to Docker Hub
-      run: |
-        docker push ${{ secrets.DOCKER_USERNAME }}/bookcatalogservice:latest
-        docker push ${{ secrets.DOCKER_USERNAME }}/hostelmanagement:latest
-
-  # =====================================================
-  # 2️⃣ CD - Deploy on your LOCAL PC (Self-hosted Runner)
-  # =====================================================
-  deploy:
-    needs: build_and_push
-    runs-on: self-hosted
-
-    steps:
-    - name: Checkout Code
-      uses: actions/checkout@v4
-
-    - name: Pull latest images
-      run: |
-        docker pull ${{ secrets.DOCKER_USERNAME }}/bookcatalogservice:latest
-        docker pull ${{ secrets.DOCKER_USERNAME }}/hostelmanagement:latest
-
-    - name: Restart containers
-      run: |
-        docker compose down
-        docker compose up -d
-
-    - name: Show running containers
-      run: docker ps
+        docker push ${{ secrets.ACR_LOGIN_SERVER }}/hostelservice:latest
