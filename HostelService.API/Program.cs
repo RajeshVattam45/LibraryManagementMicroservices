@@ -54,9 +54,11 @@ builder.Services.AddScoped<IStudentAssignmentMediator, StudentAssignmentMediator
 builder.Services.AddScoped ( typeof ( IGenericRepository<> ), typeof ( GenericRepository<> ) );
 
 //builder.Services.AddHttpClient<IStudentValidationService, StudentValidationService> ();
+var studentApiBaseUrl = builder.Configuration["StudentService:BaseUrl"];
+
 builder.Services.AddHttpClient<IStudentValidationService, StudentValidationService> ( client =>
 {
-    client.BaseAddress = new Uri ( "https://host.docker.internal:7230/" );
+    client.BaseAddress = new Uri ( studentApiBaseUrl );
 } );
 
 
@@ -77,11 +79,11 @@ var app = builder.Build ();
 // --------------------
 // Middleware Pipeline
 // --------------------
-if (app.Environment.IsDevelopment ())
+app.UseSwagger ();
+app.UseSwaggerUI ( c =>
 {
-    app.UseSwagger ();
-    app.UseSwaggerUI ();
-}
+    c.SwaggerEndpoint ( "/swagger/v1/swagger.json", "Hostel Service API v1" );
+} );
 
 app.UseHttpsRedirection ();
 app.MapControllers ();
