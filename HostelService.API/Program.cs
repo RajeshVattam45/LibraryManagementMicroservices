@@ -85,6 +85,18 @@ app.UseSwaggerUI ( c =>
     c.SwaggerEndpoint ( "/swagger/v1/swagger.json", "Hostel Service API v1" );
 } );
 
+app.MapControllers ();
+
+// Health check
+app.MapGet ( "/health", ( ) => Results.Ok ( "Healthy" ) );
+
+// Redirect root to Swagger
+app.MapGet ( "/", context =>
+{
+    context.Response.Redirect ( "/swagger" );
+    return Task.CompletedTask;
+} );
+
 app.UseHttpsRedirection ();
 app.MapControllers ();
 
