@@ -10,7 +10,7 @@ using HostelService.Application.Mediators;
 var builder = WebApplication.CreateBuilder ( args );
 
 // --------------------
-// Load configuration in correct order
+// Load configuration
 // --------------------
 builder.Configuration
     .AddJsonFile ( "appsettings.json", optional: false, reloadOnChange: true )
@@ -18,7 +18,7 @@ builder.Configuration
     .AddEnvironmentVariables ();
 
 // --------------------
-// Database Connection
+// Database
 // --------------------
 var connectionString = builder.Configuration.GetConnectionString ( "DefaultConnection" );
 
@@ -34,7 +34,6 @@ builder.Services.AddDbContext<HostelDbContext> ( options =>
                 errorNumbersToAdd: null
             );
         } ) );
-
 
 // --------------------
 // Dependency Injection
@@ -53,14 +52,12 @@ builder.Services.AddScoped<IStudentAssignmentMediator, StudentAssignmentMediator
 
 builder.Services.AddScoped ( typeof ( IGenericRepository<> ), typeof ( GenericRepository<> ) );
 
-//builder.Services.AddHttpClient<IStudentValidationService, StudentValidationService> ();
+// HTTP client
 var studentApiBaseUrl = builder.Configuration["StudentService:BaseUrl"];
-
 builder.Services.AddHttpClient<IStudentValidationService, StudentValidationService> ( client =>
 {
     client.BaseAddress = new Uri ( studentApiBaseUrl );
 } );
-
 
 // --------------------
 // MVC + Swagger
@@ -71,21 +68,26 @@ builder.Services.AddEndpointsApiExplorer ();
 
 builder.Services.AddSwaggerGen ( c =>
 {
-    c.SwaggerDoc ( "v1", new OpenApiInfo { Title = "Hostel Service API", Version = "v1" } );
+    c.SwaggerDoc ( "v1", new OpenApiInfo
+    {
+        Title = "Hostel Service API",
+        Version = "v1"
+    } );
 } );
 
 var app = builder.Build ();
 
 // --------------------
-// Middleware Pipeline
+// Middleware Pipeline (ORDER MATTERS)
 // --------------------
+app.UseHttpsRedirection ();
+
 app.UseSwagger ();
 app.UseSwaggerUI ( c =>
 {
     c.SwaggerEndpoint ( "/swagger/v1/swagger.json", "Hostel Service API v1" );
+    c.RoutePrefix = "swagger";
 } );
-
-app.MapControllers ();
 
 // Health check
 app.MapGet ( "/health", ( ) => Results.Ok ( "Healthy" ) );
@@ -97,22 +99,16 @@ app.MapGet ( "/", context =>
     return Task.CompletedTask;
 } );
 
-app.UseHttpsRedirection ();
+// Controllers (ONLY ONCE)
 app.MapControllers ();
 
+// --------------------
+// Optional EF Migrations
+// --------------------
 var applyMigrationsEnv = builder.Configuration["APPLY_MIGRATIONS"];
-var applyMigrations = false;
-
-// If env var is explicitly set to "true", honor it.
-// Otherwise allow auto-run only in Development.
-if (!string.IsNullOrEmpty ( applyMigrationsEnv ))
-{
-    bool.TryParse ( applyMigrationsEnv, out applyMigrations );
-}
-else
-{
-    applyMigrations = app.Environment.IsDevelopment ();
-}
+var applyMigrations = !string.IsNullOrEmpty ( applyMigrationsEnv )
+    ? bool.TryParse ( applyMigrationsEnv, out var result ) && result
+    : app.Environment.IsDevelopment ();
 
 var isEfDesignTime = AppDomain.CurrentDomain
     .GetAssemblies ()
@@ -121,13 +117,10 @@ var isEfDesignTime = AppDomain.CurrentDomain
 if (applyMigrations && !isEfDesignTime)
 {
     using var scope = app.Services.CreateScope ();
-    var services = scope.ServiceProvider;
-    var logger = services.GetRequiredService<ILogger<Program>> ();
-    var db = services.GetRequiredService<HostelDbContext> ();
-
+    var db = scope.ServiceProvider.GetRequiredService<HostelDbContext> ();
     db.Database.Migrate ();
 }
 
-
 app.Run ();
+
 public partial class Program { }

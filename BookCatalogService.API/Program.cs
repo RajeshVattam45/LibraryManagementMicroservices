@@ -7,7 +7,7 @@ using Microsoft.EntityFrameworkCore;
 var builder = WebApplication.CreateBuilder ( args );
 
 // --------------------
-// Configuration (important for Azure)
+// Configuration
 // --------------------
 builder.Configuration
     .AddJsonFile ( "appsettings.json", optional: false )
@@ -15,7 +15,7 @@ builder.Configuration
     .AddEnvironmentVariables ();
 
 // --------------------
-// Add DbContext
+// Database
 // --------------------
 builder.Services.AddDbContext<BookCatalogDbContext> ( options =>
 {
@@ -31,9 +31,8 @@ builder.Services.AddDbContext<BookCatalogDbContext> ( options =>
         } );
 } );
 
-
 // --------------------
-// Register Repositories & Services
+// Dependency Injection
 // --------------------
 builder.Services.AddScoped<IBookRepository, BookRepository> ();
 builder.Services.AddScoped<IBookAppService, BookAppService> ();
@@ -48,7 +47,7 @@ builder.Services.AddScoped<IPublisherRepository, PublisherRepository> ();
 builder.Services.AddScoped<IPublisherAppService, PublisherAppService> ();
 
 // --------------------
-// API + Swagger
+// MVC + Swagger
 // --------------------
 builder.Services.AddControllers ();
 builder.Services.AddEndpointsApiExplorer ();
@@ -57,15 +56,16 @@ builder.Services.AddSwaggerGen ();
 var app = builder.Build ();
 
 // --------------------
-// Middleware Pipeline
+// Middleware Pipeline (ORDER MATTERS)
 // --------------------
+app.UseHttpsRedirection ();
+
 app.UseSwagger ();
 app.UseSwaggerUI ( c =>
 {
     c.SwaggerEndpoint ( "/swagger/v1/swagger.json", "Book Service API v1" );
+    c.RoutePrefix = "swagger";
 } );
-
-app.MapControllers ();
 
 // Health check
 app.MapGet ( "/health", ( ) => Results.Ok ( "Healthy" ) );
@@ -77,11 +77,9 @@ app.MapGet ( "/", context =>
     return Task.CompletedTask;
 } );
 
-app.UseHttpsRedirection ();
-app.UseAuthorization ();
+// Controllers (ONLY ONCE)
 app.MapControllers ();
 
 app.Run ();
 
-// Needed for EF tools
 public partial class Program { }
